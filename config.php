@@ -1,10 +1,10 @@
 <?php
 // config.php
 
-$host = 'localhost';
+$host = 'controlescolar.postgres.database.azure.com';
 $dbname = 'ecommerce';
-$user = 'postgres';
-$password = 'Abysswalker';
+$user = 'memerson';
+$password = 'Abysswalker@1';
 
 try {
     $pdo = new PDO("pgsql:host=$host;dbname=$dbname", $user, $password);
