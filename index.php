@@ -45,8 +45,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <li><strong>Costo Total:</strong> " . $transaccion['costo_total'] . "</li>
                 </ul>
                 </div>";
-                $stmt = $pdo->query("SELECT id_producto, nom_prod FROM productos");
-                $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } else {
             echo "<div class='error'><p>No se pudo recuperar la transacción. Intenta nuevamente.</p></div>";
         }
@@ -55,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     }
 } else {
     // Mostrar el formulario para seleccionar un producto
-    $stmt = $pdo->query("SELECT id_producto, nom_prod FROM productos");
+    $stmt = $pdo->query("SELECT id_producto, nom_prod, precio, impuesto_unitario FROM productos");
     $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
@@ -67,6 +65,37 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compra de Producto</title>
     <link rel="stylesheet" href="style.css">
+    <script>
+        // Función que se ejecuta cuando cambia el producto seleccionado
+        function actualizarDetallesProducto() {
+            var productoSeleccionado = document.getElementById("id_producto").value;
+            var unidades = document.getElementById("unidades").value;
+            
+            // Enviar solicitud AJAX para obtener el precio e impuesto del producto seleccionado
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "obtener_detalles_producto.php?id_producto=" + productoSeleccionado, true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    var detalles = JSON.parse(xhr.responseText);
+                    var precio = detalles.precio;
+                    var impuesto = detalles.impuesto_unitario;
+                    var costoTotal = (parseFloat(precio) + parseFloat(impuesto)) * parseInt(unidades);
+
+                    // Actualizar los valores en el formulario
+                    document.getElementById("precio").innerText = precio;
+                    document.getElementById("impuesto").innerText = impuesto;
+                    document.getElementById("costo_total").innerText = costoTotal;
+                }
+            };
+            xhr.send();
+        }
+
+        // Función para actualizar el costo total cuando se cambia la cantidad de unidades
+        function actualizarCostoTotal() {
+            var unidades = document.getElementById("unidades").value;
+            actualizarDetallesProducto();
+        }
+    </script>
 </head>
 <body>
 
@@ -85,7 +114,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="form-group">
             <label for="id_producto">Producto:</label>
-            <select name="id_producto" id="id_producto" required>
+            <select name="id_producto" id="id_producto" required onchange="actualizarDetallesProducto()">
                 <?php foreach ($productos as $producto): ?>
                     <option value="<?= $producto['id_producto'] ?>"><?= $producto['nom_prod'] ?></option>
                 <?php endforeach; ?>
@@ -94,7 +123,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
         <div class="form-group">
             <label for="unidades">Cantidad de Unidades:</label>
-            <input type="number" id="unidades" name="unidades" required>
+            <input type="number" id="unidades" name="unidades" required value="1" onchange="actualizarCostoTotal()">
+        </div>
+
+        <!-- Mostrar detalles de precio, impuesto y costo total -->
+        <div class="form-group">
+            <p><strong>Precio Unitario:</strong> $<span id="precio">0.00</span></p>
+            <p><strong>Impuesto Unitario:</strong> $<span id="impuesto">0.00</span></p>
+            <p><strong>Costo Total:</strong> $<span id="costo_total">0.00</span></p>
         </div>
 
         <button type="submit">Comprar</button>
@@ -103,3 +139,4 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 </body>
 </html>
+
