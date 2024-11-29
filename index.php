@@ -45,6 +45,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     <li><strong>Costo Total:</strong> " . $transaccion['costo_total'] . "</li>
                 </ul>
                 </div>";
+            $stmt = $pdo->prepare("SELECT precio, impuesto_unitario FROM productos WHERE id_producto = ?");
+            $stmt->execute([$id_producto]);
+            $producto = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmt = $pdo->query("SELECT id_producto, nom_prod, precio, impuesto_unitario FROM productos");
+            $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } else {
             echo "<div class='error'><p>No se pudo recuperar la transacción. Intenta nuevamente.</p></div>";
         }
