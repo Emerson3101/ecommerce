@@ -1,6 +1,9 @@
 <?php
 // index.php
 
+// Configurar la zona horaria a México Centro
+date_default_timezone_set('America/Mexico_City');
+
 // Incluir la configuración de la base de datos
 include('config.php');
 
@@ -22,10 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $impuesto = $producto['impuesto_unitario'];
         $costo_total = ($precio + $impuesto) * $unidades;
 
-        // Insertar la transacción en la tabla facturas
-        $stmt = $pdo->prepare("INSERT INTO facturas (cliente, apellidos, id_producto, unidades, costo_total) 
-                               VALUES (?, ?, ?, ?, ?)");
-        $stmt->execute([$cliente, $apellidos, $id_producto, $unidades, $costo_total]);
+        // Obtener la fecha actual con la zona horaria configurada
+        $fecha_actual = date('Y-m-d H:i:s');
+
+        // Insertar la transacción en la tabla facturas incluyendo la fecha
+        $stmt = $pdo->prepare("INSERT INTO facturas (cliente, apellidos, id_producto, unidades, costo_total, fecha) 
+                               VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$cliente, $apellidos, $id_producto, $unidades, $costo_total, $fecha_actual]);
 
         // Obtener los detalles de la transacción desde la vista
         $stmt = $pdo->prepare("SELECT * FROM vista_transacciones WHERE cliente = ? AND apellidos = ? ORDER BY id_factura DESC LIMIT 1");
@@ -37,19 +43,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             echo "<div class='resultado'><h3>Transacción exitosa</h3>";
             echo "<p>Factura registrada con éxito. Los detalles de la compra son:</p>";
             echo "<ul>
-                    <li><strong>Cliente:</strong> " . $transaccion['cliente'] . " " . $transaccion['apellidos'] . "</li>
-                    <li><strong>Producto:</strong> " . $transaccion['nom_prod'] . "</li>
-                    <li><strong>Unidades:</strong> " . $transaccion['unidades'] . "</li>
-                    <li><strong>Precio Unitario:</strong> " . $transaccion['precio'] . "</li>
-                    <li><strong>Impuesto Unitario:</strong> " . $transaccion['impuesto_unitario'] . "</li>
-                    <li><strong>Costo Total:</strong> " . $transaccion['costo_total'] . "</li>
+                    <li><strong>Cliente:</strong> " . htmlspecialchars($transaccion['cliente']) . " " . htmlspecialchars($transaccion['apellidos']) . "</li>
+                    <li><strong>Producto:</strong> " . htmlspecialchars($transaccion['nom_prod']) . "</li>
+                    <li><strong>Unidades:</strong> " . htmlspecialchars($transaccion['unidades']) . "</li>
+                    <li><strong>Precio Unitario:</strong> $" . htmlspecialchars($transaccion['precio']) . "</li>
+                    <li><strong>Impuesto Unitario:</strong> $" . htmlspecialchars($transaccion['impuesto_unitario']) . "</li>
+                    <li><strong>Costo Total:</strong> $" . htmlspecialchars($transaccion['costo_total']) . "</li>
+                    <li><strong>Fecha:</strong> " . htmlspecialchars($fecha_actual) . "</li>
                 </ul>
                 </div>";
-            $stmt = $pdo->prepare("SELECT precio, impuesto_unitario FROM productos WHERE id_producto = ?");
-            $stmt->execute([$id_producto]);
-            $producto = $stmt->fetch(PDO::FETCH_ASSOC);
-            $stmt = $pdo->query("SELECT id_producto, nom_prod, precio, impuesto_unitario FROM productos");
-            $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                $stmt = $pdo->prepare("SELECT precio, impuesto_unitario FROM productos WHERE id_producto = ?");
+                $stmt->execute([$id_producto]);
+                $producto = $stmt->fetch(PDO::FETCH_ASSOC);
+                $stmt = $pdo->query("SELECT id_producto, nom_prod, precio, impuesto_unitario FROM productos");
+                $productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
         } else {
             echo "<div class='error'><p>No se pudo recuperar la transacción. Intenta nuevamente.</p></div>";
         }
@@ -144,4 +151,3 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 </body>
 </html>
-
